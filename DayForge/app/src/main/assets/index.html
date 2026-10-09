@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>DayForge</title>
+<style>
+:root{--bg:#11131a;--panel:#1b1e29;--panel2:#232738;--text:#f4f5fb;--muted:#a5abc0;--accent:#9a8cff;--green:#80e0b0;--line:#30364a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+header{padding:24px 18px 16px;background:linear-gradient(135deg,#24213c,#11131a 75%);border-bottom:1px solid var(--line)}
+.brand{font-size:27px;font-weight:850;letter-spacing:-.8px}.brand span{color:var(--accent)}.sub{color:var(--muted);font-size:13px;margin-top:4px}
+main{padding:16px 14px 92px;max-width:760px;margin:auto}.date{color:var(--muted);font-size:13px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:10px}
+.card h3{font-size:14px;margin:0 0 10px;color:#d8dbee;font-weight:650}.value{font-size:23px;font-weight:800;letter-spacing:-.6px}.small{font-size:12px;color:var(--muted)}.bar{height:6px;background:#34394c;border-radius:8px;overflow:hidden;margin-top:11px}.bar i{display:block;height:100%;background:var(--accent);border-radius:8px}
+button{border:0;border-radius:11px;background:var(--accent);color:#151326;padding:10px 12px;font-weight:750;cursor:pointer}button.secondary{background:var(--panel2);border:1px solid var(--line);color:var(--text)}button.tiny{padding:8px 12px;min-width:42px}.row{display:flex;align-items:center;justify-content:space-between;gap:8px}.row+.row{margin-top:10px}
+input,select{width:100%;background:#12151e;border:1px solid #3a4055;color:var(--text);border-radius:10px;padding:11px;margin:5px 0 10px;font:inherit}label{font-size:12px;color:var(--muted)}.section-title{font-size:19px;font-weight:800;margin:22px 0 12px}.habit-name{font-weight:700}.habit-actions{display:flex;gap:6px;align-items:center}.pill{background:#2c3044;color:#c9c2ff;border-radius:20px;padding:5px 9px;font-size:11px}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;gap:2px;background:#171923;border-top:1px solid var(--line);padding:9px 5px calc(9px + env(safe-area-inset-bottom));z-index:5}
+nav button{flex:1;background:transparent;color:var(--muted);padding:8px 3px;font-size:11px;border-radius:9px}nav button.active{background:#302c4d;color:#d8d1ff}
+.view{display:none}.view.active{display:block}.task{display:flex;gap:10px;align-items:flex-start}.task input[type=checkbox]{width:20px;height:20px;margin:2px 0;accent-color:var(--accent)}.task .tasktext{flex:1}.done{text-decoration:line-through;color:var(--muted)}.empty{color:var(--muted);text-align:center;padding:20px 8px;font-size:13px}
+.notice{font-size:12px;color:var(--muted);line-height:1.5}.toast{position:fixed;top:12px;left:12px;right:12px;background:#2d3150;padding:12px;border-radius:12px;display:none;z-index:10}
+@media(min-width:560px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}main{padding-top:22px}}
+</style>
+</head>
+<body>
+<header><div class="brand">Day<span>Forge</span></div><div class="sub">Build your day, one action at a time.</div></header>
+<div id="toast" class="toast"></div>
+<main>
+<section id="home" class="view active">
+<div class="date" id="today"></div>
+<div class="card"><div class="row"><div><h3>DAILY COMPLETION</h3><div class="value" id="overall">0%</div></div><span class="pill">TODAY</span></div><div class="bar"><i id="overallbar" style="width:0%"></i></div><div class="small" id="summary" style="margin-top:8px">Start with one small action.</div></div>
+<div class="grid" id="dashboard"></div>
+<div class="section-title">Quick actions</div><div class="card"><div class="row"><div><b>Log water</b><div class="small">Add 100 ml to today's total</div></div><button onclick="addWater(100)">+100 ml</button></div></div>
+<div class="card"><div class="row"><div><b>Start a study session</b><div class="small" id="timerstatus">No active timer</div></div><button id="timerbutton" onclick="toggleStudy()">Start</button></div></div>
+</section>
+
+<section id="habits" class="view">
+<div class="section-title" style="margin-top:2px">Daily trackers</div><p class="notice">Tap + or Mark done as you complete an activity. Your daily counters reset on a new date; history is kept locally where supported by the tracker.</p>
+<div id="habitslist"></div>
+<div class="section-title">Log today's weight</div><div class="card"><label>Weight (kg)</label><div class="row"><input id="weightinput" type="number" step="0.1" min="1" placeholder="e.g. 70.5"><button onclick="saveWeight()">Save</button></div><div id="weightlast" class="small"></div></div>
+<div class="section-title">Add a simple counter</div><div class="card"><label>Tracker name</label><input id="newhabitname" placeholder="e.g. Read pages"><label>Daily target</label><input id="newhabitgoal" type="number" min="1" value="10"><button onclick="addHabit()">Add tracker</button></div>
+</section>
+
+<section id="tasks" class="view">
+<div class="section-title" style="margin-top:2px">To-do list</div>
+<div class="card"><label>Task</label><input id="taskname" placeholder="What needs to get done?"><label>Due date & reminder (optional)</label><input id="tasktime" type="datetime-local"><button onclick="addTask()">Add task</button></div>
+<div id="tasklist"></div>
+</section>
+
+<section id="schedule" class="view">
+<div class="section-title" style="margin-top:2px">Schedule</div>
+<div class="card"><p class="notice">Add a task with a date and time in the To-do tab to schedule a reminder. Reminders are stored by Android and can appear while the app is closed, if notification permission is allowed.</p><button class="secondary" onclick="showTab('tasks')">+ Create scheduled task</button></div>
+<div id="schedulelist"></div>
+</section>
+
+<section id="stats" class="view">
+<div class="section-title" style="margin-top:2px">Progress overview</div>
+<div class="card"><h3>WATER THIS WEEK</h3><div id="waterhistory" class="notice"></div></div>
+<div class="card"><h3>STUDY TIME TODAY</h3><div class="value" id="studyhistory">0 min</div><div class="small">Time accumulated using the study timer.</div></div>
+<div class="card"><h3>WEIGHT LOG</h3><div id="weighthistory" class="notice">No entries yet.</div></div>
+<div class="card"><h3>TASK COMPLETION</h3><div class="value" id="taskstats">0 / 0</div><div class="small">Completed tasks / all saved tasks</div></div>
+</section>
+</main>
+<nav>
+<button class="active" data-tab="home" onclick="showTab('home')">⌂<br>Home</button>
+<button data-tab="habits" onclick="showTab('habits')">◉<br>Habits</button>
+<button data-tab="tasks" onclick="showTab('tasks')">☑<br>Tasks</button>
+<button data-tab="schedule" onclick="showTab('schedule')">◷<br>Schedule</button>
+<button data-tab="stats" onclick="showTab('stats')">▥<br>Stats</button>
+</nav>
+<script>
+const KEY='dayforge-data-v1';
+const defaultHabits=[
+ {id:'water',name:'Water intake',unit:'ml',goal:2500,step:100,value:0,kind:'counter'},
+ {id:'study',name:'Study hours',unit:'min',goal:480,step:30,value:0,kind:'counter'},
+ {id:'coding',name:'Coding sessions',unit:'sessions',goal:2,step:1,value:0,kind:'counter'},
+ {id:'shower',name:'Showers',unit:'times',goal:1,step:1,value:0,kind:'counter'}
+];
+function dateKey(){return new Date().toISOString().slice(0,10)}
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return {}}}
+let data=load();
+if(!data.habits)data.habits=defaultHabits;
+if(!data.tasks)data.tasks=[];
+if(!data.weights)data.weights=[];
+if(!data.daily)data.daily={};
+if(!data.lastDate)data.lastDate=dateKey();
+if(data.lastDate!==dateKey()){
+ data.daily[data.lastDate]={habits:data.habits.map(h=>({id:h.id,name:h.name,value:h.value})),studyMinutes:data.studyMinutes||0};
+ data.habits.forEach(h=>h.value=0); data.studyMinutes=0; data.lastDate=dateKey(); save();
+}
+function save(){localStorage.setItem(KEY,JSON.stringify(data));render()}
+function fmtMinutes(n){n=Number(n)||0;return Math.floor(n/60)+'h '+(n%60)+'m'}
+function toast(s){let t=document.getElementById('toast');t.textContent=s;t.style.display='block';setTimeout(()=>t.style.display='none',2200)}
+function showTab(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===id))}
+function bump(id,amount){let h=data.habits.find(x=>x.id===id);if(!h)return;h.value=Math.max(0,(Number(h.value)||0)+amount);save()}
+function addWater(n){bump('water',n);toast('Water intake updated')}
+function markDone(id){let h=data.habits.find(x=>x.id===id);if(!h)return;h.value=Math.min(Number(h.goal)||999999,(Number(h.value)||0)+1);save()}
+function addHabit(){let name=document.getElementById('newhabitname').value.trim(),goal=Number(document.getElementById('newhabitgoal').value);if(!name||goal<1){toast('Enter a name and target');return}data.habits.push({id:'h'+Date.now(),name,unit:'count',goal,step:1,value:0,kind:'counter'});document.getElementById('newhabitname').value='';save();toast('Tracker added')}
+function saveWeight(){let v=Number(document.getElementById('weightinput').value);if(!(v>0)){toast('Enter a valid weight');return}data.weights.push({date:dateKey(),value:v});document.getElementById('weightinput').value='';save();toast('Weight saved')}
+function addTask(){let name=document.getElementById('taskname').value.trim(),raw=document.getElementById('tasktime').value;if(!name){toast('Enter a task first');return}let task={id:Date.now(),name,done:false,reminder:raw||''};data.tasks.push(task);if(raw){let ms=new Date(raw).getTime();if(ms>Date.now()&&window.DayForge&&DayForge.scheduleReminder){DayForge.scheduleReminder(name,ms);toast('Task added and reminder scheduled')}else toast('Task added; reminder time must be in future')}else toast('Task added');document.getElementById('taskname').value='';document.getElementById('tasktime').value='';save()}
+function toggleTask(id){let t=data.tasks.find(x=>x.id===id);if(t){t.done=!t.done;save()}}
+let studyStart=null,studyInterval=null;
+function toggleStudy(){if(!studyStart){studyStart=Date.now();document.getElementById('timerbutton').textContent='Stop';studyInterval=setInterval(updateTimer,1000);updateTimer()}else{let mins=Math.max(1,Math.round((Date.now()-studyStart)/60000));data.studyMinutes=(data.studyMinutes||0)+mins;let h=data.habits.find(x=>x.id==='study');if(h)h.value=(Number(h.value)||0)+mins;studyStart=null;clearInterval(studyInterval);studyInterval=null;document.getElementById('timerbutton').textContent='Start';document.getElementById('timerstatus').textContent='No active timer';save();toast('Study session saved: '+mins+' min')}}
+function updateTimer(){if(studyStart)document.getElementById('timerstatus').textContent='Running · '+Math.floor((Date.now()-studyStart)/60000)+' min'}
+function render(){
+ document.getElementById('today').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+ let completed=0,total=0;
+ data.habits.forEach(h=>{total++;if(Number(h.value)>=Number(h.goal))completed++});
+ data.tasks.forEach(t=>{total++;if(t.done)completed++});
+ let pct=total?Math.round(completed/total*100):0;document.getElementById('overall').textContent=pct+'%';document.getElementById('overallbar').style.width=pct+'%';document.getElementById('summary').textContent=completed+' of '+total+' daily goals/tasks complete';
+ document.getElementById('dashboard').innerHTML=data.habits.slice(0,6).map(h=>{let v=Number(h.value)||0,g=Number(h.goal)||1,p=Math.min(100,Math.round(v/g*100));let val=h.id==='study'?fmtMinutes(v):v+' '+h.unit;let goal=h.id==='study'?fmtMinutes(g):g+' '+h.unit;return `<div class="card"><h3>${esc(h.name)}</h3><div class="value">${val}</div><div class="small">Target: ${goal}</div><div class="bar"><i style="width:${p}%"></i></div></div>`}).join('');
+ document.getElementById('habitslist').innerHTML=data.habits.map(h=>{let v=Number(h.value)||0,g=Number(h.goal)||1,p=Math.min(100,Math.round(v/g*100));let display=h.id==='study'?fmtMinutes(v):v+' / '+g+' '+h.unit;return `<div class="card"><div class="row"><div><div class="habit-name">${esc(h.name)}</div><div class="small">${display}</div></div><div class="habit-actions"><button class="secondary tiny" onclick="bump('${h.id}',-${Number(h.step)||1})">−</button><button class="tiny" onclick="bump('${h.id}',${Number(h.step)||1})">+${Number(h.step)||1}</button></div></div><div class="bar"><i style="width:${p}%"></i></div></div>`}).join('');
+ document.getElementById('tasklist').innerHTML=data.tasks.length?data.tasks.map(t=>`<div class="card task"><input type="checkbox" ${t.done?'checked':''} onchange="toggleTask(${t.id})"><div class="tasktext"><div class="${t.done?'done':''}"><b>${esc(t.name)}</b></div><div class="small">${t.reminder?'Reminder: '+new Date(t.reminder).toLocaleString():'No reminder set'}</div></div><button class="secondary tiny" onclick="deleteTask(${t.id})">×</button></div>`).join(''):'<div class="empty">No tasks yet. Add your first task above.</div>';
+ let upcoming=data.tasks.filter(t=>t.reminder&&!t.done).sort((a,b)=>new Date(a.reminder)-new Date(b.reminder));document.getElementById('schedulelist').innerHTML=upcoming.length?upcoming.map(t=>`<div class="card"><b>${esc(t.name)}</b><div class="small">${new Date(t.reminder).toLocaleString()}</div></div>`).join(''):'<div class="empty">No scheduled reminders yet.</div>';
+ document.getElementById('weightlast').textContent=data.weights.length?'Latest saved: '+data.weights[data.weights.length-1].value+' kg on '+data.weights[data.weights.length-1].date:'No weight logged yet.';
+ document.getElementById('weighthistory').innerHTML=data.weights.slice(-7).reverse().map(w=>esc(w.date)+' — '+w.value+' kg').join('<br>')||'No entries yet.';
+ document.getElementById('waterhistory').innerHTML=(data.daily&&Object.keys(data.daily).length?Object.keys(data.daily).sort().slice(-6).reverse().map(d=>{let w=(data.daily[d].habits||[]).find(h=>h.id==='water');return d+': '+(w?w.value:0)+' ml'}).join('<br>'):'No previous-day history yet.')+'<br>'+dateKey()+': '+((data.habits.find(h=>h.id==='water')||{}).value||0)+' ml';
+ document.getElementById('studyhistory').textContent=fmtMinutes(data.studyMinutes||0);
+ document.getElementById('taskstats').textContent=data.tasks.filter(t=>t.done).length+' / '+data.tasks.length;
+}
+function deleteTask(id){data.tasks=data.tasks.filter(t=>t.id!==id);save()}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+render();
+</script>
+</body></html>
